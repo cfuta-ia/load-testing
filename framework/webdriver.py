@@ -21,9 +21,7 @@ class WebDriver(object):
     
     def remove_session(self):
         """ """
-        if self.windows == 1:
-            pass
-        else:
+        if self.currentCount != 1:
             self.driver.close()
             self.focus()
         self.setCount()

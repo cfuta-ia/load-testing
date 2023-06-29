@@ -120,8 +120,11 @@ def removeSession():
         JSON response
     """
     if app.webdriver:
-        app.webdriver.remove_session()
-        response = Response(SESSION_REMOVED)
+        if app.webdriver.currentCount != 1:
+            app.webdriver.remove_session()
+            response = Response(SESSION_REMOVED)
+        else:
+            response = Response(SESSION_LOWER_LIMIT)
     else:
         response = Response(DRIVER_NOT_CONFIGURED)
     return response.props

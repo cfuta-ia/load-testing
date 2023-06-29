@@ -2,6 +2,7 @@ TEST = 'Test response.'
 
 SESSION_ADDED = 'Session added successfully.'
 SESSION_REMOVED = 'Session removed successfully.'
+SESSION_LOWER_LIMIT = 'Cannot remove session, there must be more than 1 session.'
 
 REQUEST_ERROR_TYPE = "POST data must be a valid JSON object (dict)."
 REQUEST_ERROR_FORMAT = "POST data must only contain the key 'url'."
