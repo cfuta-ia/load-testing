@@ -6,7 +6,6 @@ from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 SERVICE = Service(GeckoDriverManager().install())
 OPTIONS = FirefoxOptions()
 OPTIONS.headless = False
-#OPTIONS.binary_location = ''
 
 def get():
     """Return the config dictionary from the above values"""

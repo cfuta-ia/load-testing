@@ -1,8 +1,11 @@
+from framework.webdriver.webdriver import WebDriver
 from framework.device.device import Device
 
+webdriver = WebDriver()
+device = Device('test')
 
-filename = 'test2.yaml'
+webdriver.add_session(device.url, False)
+webdriver.add_session(device.url)
+webdriver.shutdown()
 
-
-client = Device(filename)
-client.props
+print(webdriver.driver)
