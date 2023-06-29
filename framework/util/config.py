@@ -7,6 +7,16 @@ SERVICE = Service(GeckoDriverManager().install())
 OPTIONS = FirefoxOptions()
 OPTIONS.headless = False
 
-def get():
+HOST = '0.0.0.0'
+PORT = 5000
+DEBUG = True
+
+def get(config):
     """Return the config dictionary from the above values"""
-    return {'service': SERVICE, 'options': OPTIONS}
+    config = config.lower()
+    if config == 'webdriver':
+        return {'service': SERVICE, 'options': OPTIONS}
+    elif config == 'app':
+        return {'host': HOST, 'port': PORT, 'debug': DEBUG}
+    else:
+        return {}

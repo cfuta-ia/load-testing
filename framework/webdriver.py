@@ -1,18 +1,20 @@
 from selenium.webdriver import Firefox
-from .util import config, status
+from .gateway import IgnitionGateway
+from .util import config
 
 class WebDriver(object):
     """Client"""
     WAIT_TIME = 1 # wait time for actions -- switching windows etc
-    def __init__(self):
-        self.driver = Firefox(**config.get())
+    def __init__(self, url):
+        self.driver = Firefox(**config.get('webdriver'))
+        self.device = IgnitionGateway(url)
         self.count = {'value': 0, 'max': 0}
 
-    def add_session(self, url, newTab=True):
+    def add_session(self):
         """ """
-        if newTab:
+        if self.currentCount != 0:
             self.driver.switch_to.new_window()
-        self.driver.get(url)
+        self.driver.get(self.device.url)
         self.focus(-1)
         self.setCount()
         return None

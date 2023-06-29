@@ -1,11 +1,12 @@
-from framework.webdriver.webdriver import WebDriver
-from framework.device.device import Device
+from framework.webdriver import WebDriver
+from framework.gateway import IgnitionGateway
 
-webdriver = WebDriver()
-device = Device('test')
+URL = 'http://localhost:8088/data/perspective/client/ToastNotification'
+webdriver = WebDriver(URL)
+#webdriver.configure(URL)
 
-webdriver.add_session(device.url, False)
-webdriver.add_session(device.url)
-webdriver.shutdown()
+webdriver.add_session()
+webdriver.add_session()
+#webdriver.shutdown()
 
 print(webdriver.driver)
