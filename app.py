@@ -10,43 +10,46 @@ app.webdriver = None
 
 @app.route('/test')
 def test():
-    """Test response endpoint"""
+    """Test response endpoint
+    
+    Returns:
+        JSON response
+    """
     return Response(TEST).props
 
 @app.route('/')
 def index():
-    """ """
+    """Flask app home page
+    
+    Returns:
+        'static' html homepage
+    """
     return render_template('index.html')
-
-@app.route('/metrics', methods=['GET'])
-def getMetrics():
-    """ """
-    if app.webdriver:
-        metrics = {
-            'count': app.webdriver.currentCount
-            , 'max': app.webdriver.maxCount
-        }
-        response = Response(message=DRIVER_METRICS, **metrics)
-    else:
-        response = Response(DRIVER_NOT_CONFIGURED)
-    return response.props
 
 @app.route('/shutdown')
 def shutdown():
-    """ """
+    """Shutdown the application -- kills the webdriver and flask app
+    
+    Returns:
+        JSON response
+    """
     app.webdriver.shutdown()
     os.kill(os.getpid(), signal.SIGINT)
     return Response(SHUT_DOWN).props
     
 @app.route('/webdriver/configure/', methods=['POST'])
 def configureWebDriver():
-    """ """
+    """Configure the webdriver if it has not already been configured
+    
+    Returns:
+        JSON response
+    """
     if app.webdriver:
         response = Response(DRIVER_ALREADY_CONFIGURED)
     else:
         isValid, error = processRequest(request)
         if isValid:
-            #app.webdriver = WebDriver(**request.json)
+            app.webdriver = WebDriver(**request.json)
             response = Response(DRIVER_CONFIGURED)
         else:
             response = Response(DRIVER_CONFIGURE_ERROR, error=error)
@@ -54,7 +57,11 @@ def configureWebDriver():
 
 @app.route('/webdriver/clear', methods=['POST'])
 def clearWebDriver():
-    """ """
+    """Clear the webdriver from the flask app if it has been configured
+    
+    Returns:
+        JSON response
+    """
     if app.webdriver:
         app.webdriver.shutdown()
         del app.webdriver
@@ -66,13 +73,38 @@ def clearWebDriver():
 
 @app.route('/webdriver/status', methods=['GET'])
 def getWebDriverStatus():
-    """ """
+    """Get the current status of the webdriver
+    
+    Returns:
+        JSON response
+    """
     response = Response(DRIVER_CONFIGURED if app.webdriver else DRIVER_NOT_CONFIGURED)
+    return response.props
+
+@app.route('/webdriver/metrics', methods=['GET'])
+def getMetrics():
+    """Get the current metrics from the webdriver 
+    
+    Returns:
+        JSON response
+    """
+    if app.webdriver:
+        metrics = {
+            'count': app.webdriver.currentCount
+            , 'max': app.webdriver.maxCount
+        }
+        response = Response(message=DRIVER_METRICS, **metrics)
+    else:
+        response = Response(DRIVER_NOT_CONFIGURED)
     return response.props
 
 @app.route('/webdriver/add-session', methods=['POST'])
 def addSession():
-    """ """
+    """Add a session from the webdriver if it eis configured
+    
+    Returns:
+        JSON response
+    """
     if app.webdriver:
         app.webdriver.add_session()
         response = Response(SESSION_ADDED)
@@ -82,7 +114,11 @@ def addSession():
 
 @app.route('/webdriver/remove-session', methods=['POST'])
 def removeSession():
-    """ """
+    """Remove a session from the webdriver if it eis configured
+    
+    Returns:
+        JSON response
+    """
     if app.webdriver:
         app.webdriver.remove_session()
         response = Response(SESSION_REMOVED)
@@ -91,7 +127,13 @@ def removeSession():
     return response.props
 
 def processRequest(request):
-    """Process the request json to ensure it has the correct format"""
+    """Process the request json to ensure it has the correct format
+    
+    Args:
+        request: incoming request from flask endpoint (/webdriver/configure)
+    Returns:
+        isValid, error
+    """
     try:
         data = request.json
         isValid = (isinstance(data, dict)) and ('url' in data.keys())
