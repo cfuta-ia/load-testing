@@ -1,19 +1,36 @@
 from flask import Flask, request, render_template
-import os, signal, datetime
+from framework.device.device import Device
+from framework.webdriver.webdriver import WebDriver
+import os, signal, datetime, yaml
 
-app = Flask(__name__)
+def application():
+    """ """
+    app = Flask(__name__)
+    app.webdriver = None
 
-@app.route('/test', methods=['GET', 'POST'])
-def test():
-    return {'timestamp': datetime.datetime.now()}
+    @app.route('/test', methods=['GET', 'POST'])
+    def test():
+        return {'timestamp': datetime.datetime.now()}
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+    @app.route('/', methods=['GET'])
+    def index():
+        return render_template('index.html')
 
-@app.route('/metrics')
-def metrics():
-    return render_template('metrics.html')
-
-def startApplication():
-    return app.run(host='0.0.0.0', port=5000, debug=True)
+    @app.route('/status', methods=['GET'])
+    def metrics():
+        return render_template('status.html')
+        
+    @app.route('/webdriver/set/<file>', methods=['POST'])
+    def setWebdriver(file=None):
+        client = Device(file)
+        app.webdriver = WebDriver()
+        return None
+    
+    @app.route('/shutdown', methods=['POST'])
+    def shutdown():
+        """ """
+        app.webdriver.shutdown()
+        os.kill(os.getpid(), signal.SIGINT)
+        return {'message': 'Shutting down...', 'value': True}
+    
+    return app
