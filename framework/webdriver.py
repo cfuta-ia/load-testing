@@ -1,4 +1,4 @@
-from selenium.webdriver import Firefox
+from selenium.webdriver import Firefox, FirefoxProfile
 from .gateway import IgnitionGateway
 from .util import config
 
@@ -6,41 +6,57 @@ class WebDriver(object):
     """Client"""
     WAIT_TIME = 1 # wait time for actions -- switching windows etc
     def __init__(self, url):
-        self.driver = Firefox(**config.get('webdriver'))
+        self.drivers = []
         self.device = IgnitionGateway(url)
         self.count = {'value': 0, 'max': 0}
 
+    def set_device(self, url):
+        """Sets the url for the webdriver to access
+        
+        Args:
+            url: url the webdriver sessions will be pointed to
+        Returns:
+            None
+        """
+        self.device = IgnitionGateway(url)
+        return None
+    
+    def clear_device(self):
+        """Clears the device from the webdriver"""
+        del self.device
+        self.device = None
+        return None
+
     def add_session(self):
         """ """
-        if self.currentCount != 0:
-            self.driver.switch_to.new_window()
-        self.driver.get(self.device.url)
-        self.focus(-1)
-        self.setCount()
+        if bool(self.device):
+            driver = Firefox(**config.getWebDriverArgs())
+            driver.get(self.device.url)
+            self.drivers.append(driver)
+            self.setCount()
         return None
     
     def remove_session(self):
         """ """
-        if self.currentCount != 1:
-            self.driver.close()
-            self.focus()
+        if len(self.drivers) > 0 and bool(self.device):
+            self.drivers[-1].close()
+            self.drivers[-1].quit()
+            del self.drivers[-1]
         self.setCount()
         return None
 
     def shutdown(self):
         """End the browser session"""
-        self.driver.quit()
-        return None
-
-    def focus(self, index=-1):
-        """Set the driver focus on the tab with the input index"""
-        id = self.driver.window_handles[index]
-        self.driver.switch_to.window(id)
+        if bool(self.drivers) and len(self.drivers) > 0:
+            for idx in range(len(self.drivers)):
+                self.drivers[-1].close()
+                self.drivers[-1].quit()
+                del self.drivers[-1]
         return None
 
     def setCount(self):
         """ """
-        self.count['value'] = len(self.driver.window_handles)
+        self.count['value'] = len(self.drivers)
         if self.count['value'] > self.count['max']:
             self.count['max'] = self.count['value']
         return None

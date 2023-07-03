@@ -5,11 +5,18 @@ from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 SERVICE = Service(GeckoDriverManager().install())
 OPTIONS = FirefoxOptions()
-OPTIONS.headless = True
+OPTIONS.headless = False
+
+def getWebDriverArgs():
+    """ """
+    service = Service(GeckoDriverManager().install())
+    options = FirefoxOptions()
+    #options._profile = FirefoxProfile()
+    return {'service': service, 'options': options}
 
 HOST = '0.0.0.0'
 PORT = 5000
-DEBUG = True
+DEBUG = False
 
 def get(config):
     """Return the config dictionary from the above values"""
