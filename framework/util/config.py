@@ -5,7 +5,7 @@ from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 SERVICE = Service(GeckoDriverManager().install())
 OPTIONS = FirefoxOptions()
-OPTIONS.headless = False
+OPTIONS.headless = True
 
 HOST = '0.0.0.0'
 PORT = 5000
