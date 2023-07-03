@@ -1,6 +1,7 @@
 from selenium.webdriver import Firefox, FirefoxProfile
 from .gateway import IgnitionGateway
 from .util import config
+from datetime import datetime
 
 class WebDriver(object):
     """Client"""
@@ -9,6 +10,8 @@ class WebDriver(object):
         self.drivers = []
         self.device = IgnitionGateway(url)
         self.count = {'value': 0, 'max': 0}
+        with open('load_test.txt', 'a') as f:
+            f.write('count, max_count, timestamp\n')
 
     def set_device(self, url):
         """Sets the url for the webdriver to access
@@ -34,6 +37,7 @@ class WebDriver(object):
             driver.get(self.device.url)
             self.drivers.append(driver)
             self.setCount()
+            self.write_file()
         return None
     
     def remove_session(self):
@@ -43,6 +47,7 @@ class WebDriver(object):
             self.drivers[-1].quit()
             del self.drivers[-1]
         self.setCount()
+        self.write_file()
         return None
 
     def shutdown(self):
@@ -68,3 +73,8 @@ class WebDriver(object):
     @property
     def maxCount(self):
         return self.count['max']
+    
+    def write_file(self):
+        """ """
+        with open('load_test.txt', 'a') as f:
+            f.write('{count}, {maxCount}, {ts}\n'.format(count=self.currentCount, maxCount=self.maxCount, ts=datetime.now()))

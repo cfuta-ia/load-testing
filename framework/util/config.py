@@ -7,10 +7,11 @@ SERVICE = Service(GeckoDriverManager().install())
 OPTIONS = FirefoxOptions()
 OPTIONS.headless = False
 
-def getWebDriverArgs():
+def getWebDriverArgs(headless=True):
     """ """
     service = Service(GeckoDriverManager().install())
     options = FirefoxOptions()
+    options.headless = headless
     #options._profile = FirefoxProfile()
     return {'service': service, 'options': options}
 
