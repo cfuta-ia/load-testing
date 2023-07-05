@@ -1,19 +1,28 @@
-from selenium.webdriver import Firefox, FirefoxProfile
+from selenium.webdriver import Firefox
 from .gateway import IgnitionGateway
-from .util import config
+from .util import logger
+from .util.config import WebDriverConfig
 from datetime import datetime
 
 class WebDriver(object):
     """Client"""
-    WAIT_TIME = 1 # wait time for actions -- switching windows etc
-    def __init__(self, url):
-        self.drivers = []
-        self.device = IgnitionGateway(url)
-        self.count = {'value': 0, 'max': 0}
-        with open('load_test.txt', 'a') as f:
-            f.write('count, max_count, timestamp\n')
+    def __init__(self):
+        self.initialConditions()
 
-    def set_device(self, url):
+    def initialConditions(self):
+        """ """
+        self.drivers = []
+        self.device = None
+        self.filename = None
+        self.count = {'value': 0, 'max': 0}
+
+    def reset(self):
+        """Clears the device from the webdriver"""
+        del self.device, self.drivers, self.filename, self.count
+        self.initialConditions()
+        return None
+
+    def configure(self, url):
         """Sets the url for the webdriver to access
         
         Args:
@@ -21,42 +30,36 @@ class WebDriver(object):
         Returns:
             None
         """
-        self.device = IgnitionGateway(url)
-        return None
-    
-    def clear_device(self):
-        """Clears the device from the webdriver"""
-        del self.device
-        self.device = None
+        if not bool(self.device):
+            self.device = IgnitionGateway(url)
+            self.filename = logger.createCSV()
         return None
 
-    def add_session(self):
+    def addSession(self):
         """ """
-        if bool(self.device):
-            driver = Firefox(**config.getWebDriverArgs())
+        if self.isConfigured:
+            driver = Firefox(**WebDriverConfig())
             driver.get(self.device.url)
             self.drivers.append(driver)
             self.setCount()
-            self.write_file()
+            self.fileWrite()
         return None
     
-    def remove_session(self):
+    def removeSession(self, index=-1):
         """ """
-        if len(self.drivers) > 0 and bool(self.device):
-            self.drivers[-1].close()
-            self.drivers[-1].quit()
-            del self.drivers[-1]
-        self.setCount()
-        self.write_file()
+        if self.isConfigured and len(self.drivers) > 0:
+            self.drivers[index].close()
+            self.drivers[index].quit()
+            del self.drivers[index]
+            self.setCount()
+            self.fileWrite()
         return None
 
     def shutdown(self):
         """End the browser session"""
-        if bool(self.drivers) and len(self.drivers) > 0:
-            for idx in range(len(self.drivers)):
-                self.drivers[-1].close()
-                self.drivers[-1].quit()
-                del self.drivers[-1]
+        while len(self.drivers) > 0:
+            self.removeSession()
+        self.reset()
         return None
 
     def setCount(self):
@@ -64,6 +67,11 @@ class WebDriver(object):
         self.count['value'] = len(self.drivers)
         if self.count['value'] > self.count['max']:
             self.count['max'] = self.count['value']
+        return None
+    
+    def fileWrite(self):
+        """ """
+        logger.writeTo(self.filename, *(self.currentCount, self.maxCount, datetime.now()))
         return None
     
     @property
@@ -74,7 +82,7 @@ class WebDriver(object):
     def maxCount(self):
         return self.count['max']
     
-    def write_file(self):
+    @property
+    def isConfigured(self):
         """ """
-        with open('load_test.txt', 'a') as f:
-            f.write('{count}, {maxCount}, {ts}\n'.format(count=self.currentCount, maxCount=self.maxCount, ts=datetime.now()))
+        return bool(self.device)

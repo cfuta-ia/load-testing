@@ -1,21 +1,12 @@
-from flask import Flask, request, render_template
+from flask import Flask, request
 from framework.webdriver import WebDriver
-from framework.response import Response
+from framework.util.response import Response
 from framework.util.constant import *
-from framework.util import config
+from framework.util.config import FlaskConfig
 import os, signal
 
 app = Flask(__name__)
-app.webdriver = None
-
-@app.route('/test')
-def test():
-    """Test response endpoint
-    
-    Returns:
-        JSON response
-    """
-    return Response(TEST).props
+app.webdriver = WebDriver()
 
 @app.route('/')
 def index():
@@ -24,26 +15,22 @@ def index():
     Returns:
         'static' html homepage
     """
-    return render_template('index.html')
+    return Response(TEST).props
 
 @app.route('/application')
 def application():
     """Endpoint for the application webpage to get data to update page with"""
-    if app.webdriver:
-        url = app.webdriver.device.url
-        count = app.webdriver.currentCount
-        maxCount = app.webdriver.maxCount
-        if count == 0:
-            status = STATUS_READY
-        elif count > 0:
-            status = STATUS_STARTED
-        else:
-            status = STATUS_ERROR
+    if app.webdriver.isConfigured:
+        url, count, maxCount = app.webdriver.device.url, app.webdriver.currentCount, app.webdriver.maxCount
+        match count:
+            case 0:
+                status = STATUS_READY
+            case _ if count > 0:
+                status = STATUS_STARTED
+            case _:
+                status = STATUS_ERROR
     else:
-        status = STATUS_IDLE
-        url = DRIVER_NOT_CONFIGURED
-        count = 0
-        maxCount = 0
+        status, url, count, maxCount = STATUS_IDLE, DRIVER_NOT_CONFIGURED, 0, 0
     values = {'status': status, 'url': url, 'count': count, 'max': maxCount}
     return Response('Application UI Update', **values).props
 
@@ -66,16 +53,17 @@ def configureWebDriver():
     Returns:
         JSON response
     """
-    if app.webdriver:
-        response = Response(DRIVER_ALREADY_CONFIGURED)
+    message = None
+    if app.webdriver.isConfigured:
+        message = DRIVER_ALREADY_CONFIGURED
     else:
         isValid, error = processRequest(request)
         if isValid:
-            app.webdriver = WebDriver(**request.json)
-            response = Response(DRIVER_CONFIGURED)
+            app.webdriver.configure(**request.json)
+            message = DRIVER_CONFIGURED
         else:
-            response = Response(DRIVER_CONFIGURE_ERROR, error=error)
-    return response.props
+            message = error
+    return WebDriverResponse(message, False)
 
 @app.route('/webdriver/clear', methods=['POST'])
 def clearWebDriver():
@@ -84,14 +72,11 @@ def clearWebDriver():
     Returns:
         JSON response
     """
-    if app.webdriver:
+    message = None
+    if app.webdriver.isConfigured:
         app.webdriver.shutdown()
-        del app.webdriver
-        app.webdriver = None
-        response = Response(DRIVER_CLEARED)
-    else:
-        response = Response(DRIVER_NOT_CONFIGURED)
-    return response.props
+        message = DRIVER_CLEARED
+    return WebDriverResponse(message, False)
 
 @app.route('/webdriver/status', methods=['GET'])
 def getWebDriverStatus():
@@ -100,8 +85,7 @@ def getWebDriverStatus():
     Returns:
         JSON response
     """
-    response = Response(DRIVER_CONFIGURED if app.webdriver else DRIVER_NOT_CONFIGURED)
-    return response.props
+    return WebDriverResponse(DRIVER_CONFIGURED, False)
 
 @app.route('/webdriver/url', methods=['GET'])
 def getWebDriverUrl():
@@ -110,8 +94,8 @@ def getWebDriverUrl():
     Returns:
         JSON response
     """
-    response = Response(app.webdriver.device.url if app.webdriver else DRIVER_NOT_CONFIGURED)
-    return response.props
+    message = app.webdriver.device.url if app.webdriver.isConfigured else None
+    return WebDriverResponse(message, False)
 
 @app.route('/webdriver/metrics', methods=['GET'])
 def getMetrics():
@@ -120,19 +104,7 @@ def getMetrics():
     Returns:
         JSON response
     """
-    if app.webdriver:
-        metrics = {
-            'count': app.webdriver.currentCount
-            , 'max': app.webdriver.maxCount
-        }
-        response = Response(message=DRIVER_METRICS, **metrics)
-    else:
-        metrics = {
-            'count': 0
-            , 'max': 0
-        }
-        response = Response(DRIVER_NOT_CONFIGURED, **metrics)
-    return response.props
+    return WebDriverResponse(DRIVER_METRICS)
 
 @app.route('/webdriver/add-session', methods=['POST'])
 def addSession():
@@ -141,12 +113,11 @@ def addSession():
     Returns:
         JSON response
     """
-    if app.webdriver:
-        app.webdriver.add_session()
-        response = Response(SESSION_ADDED)
-    else:
-        response = Response(DRIVER_NOT_CONFIGURED)
-    return response.props
+    message = None
+    if app.webdriver.isConfigured:
+        app.webdriver.addSession()
+        message = SESSION_ADDED
+    return WebDriverResponse(message)
 
 @app.route('/webdriver/remove-session', methods=['POST'])
 def removeSession():
@@ -155,15 +126,14 @@ def removeSession():
     Returns:
         JSON response
     """
-    if app.webdriver:
+    message = None
+    if app.webdriver.isConfigured:
         if app.webdriver.currentCount > 1:
-            app.webdriver.remove_session()
-            response = Response(SESSION_REMOVED)
+            app.webdriver.removeSession()
+            message = SESSION_REMOVED
         else:
-            response = Response(SESSION_LOWER_LIMIT)
-    else:
-        response = Response(DRIVER_NOT_CONFIGURED)
-    return response.props
+            message = SESSION_LOWER_LIMIT
+    return WebDriverResponse(message)
 
 
 
@@ -190,5 +160,14 @@ def processRequest(request):
         error = str(e)
     return isValid, error
 
+def WebDriverResponse(message, includeSessions=True):
+    """ """
+    args = {
+        'message': message if app.webdriver.isConfigured else DRIVER_NOT_CONFIGURED
+    }
+    if includeSessions:
+        args['sessions'] = app.webdriver.count
+    return Response(**args).props
+
 if __name__ == "__main__":
-    app.run(**config.get('app'))
+    app.run(**FlaskConfig())
