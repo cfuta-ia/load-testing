@@ -148,13 +148,7 @@ def processRequest(request):
     try:
         data = request.json
         isValid = (isinstance(data, dict)) and ('url' in data.keys())
-        if isinstance(data, dict):
-            if ['url'] == data.keys():
-                error = None
-            else:
-                error = REQUEST_ERROR_FORMAT
-        else:
-            error = REQUEST_ERROR_TYPE
+        error = None if 'url' in data.keys() else REQUEST_ERROR_FORMAT
     except Exception as e:
         isValid = False
         error = str(e)
