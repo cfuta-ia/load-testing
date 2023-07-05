@@ -13,7 +13,7 @@ def index():
     """Flask app home page
     
     Returns:
-        'static' html homepage
+        test response
     """
     return Response(TEST).props
 
