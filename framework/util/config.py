@@ -3,7 +3,7 @@ from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
-def WebDriverConfig(headless=True):
+def WebDriverConfig(headless=False):
     """ """
     service = Service(GeckoDriverManager().install())
     options = FirefoxOptions()

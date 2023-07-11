@@ -6,7 +6,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver import Firefox
 from framework.util import config
 
-URL = "https://ignitionbuildathon.com/data/perspective/client/BAT-2023-Leaderboard/load-test"
+URL = "https://challenge.ignitionbuildathon.com/data/perspective/client/BAT_2023"
 args = config.get('webdriver')
 #args['options']._profile = FirefoxProfile()
 
